@@ -63,8 +63,8 @@ if __name__ == '__main__':
     
     discrete_interval = 1.0 / actual_fps
 
-    tag_family = "   " # add actual tag family here
-    tag_size = 0 # change to actual value of tag size
+    tag_family = "tag36h11" 
+    tag_size = 0.1651 # change to actual value of tag size
     
     # modify these values after discussion with Ryan
     fx = 595.7
@@ -89,8 +89,8 @@ if __name__ == '__main__':
     DETECTION_MARGIN_THRESHOLD = apriltag_para['detection_margin_threshold']  
     DETECTION_ITERATIONS = apriltag_para['detection_iterations']
     '''
-    DETECTION_MARGIN_THRESHOLD = 0 # set this value, just placeholder rn
-    DETECTION_ITERATIONS = 0 # set this value, just placeholder rn
+    DETECTION_MARGIN_THRESHOLD = 30 # set this value, just placeholder rn
+    DETECTION_ITERATIONS = 50 # set this value, just placeholder rn
     
     cornersBuf = tuple([0.0] * 8)
 
