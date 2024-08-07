@@ -15,7 +15,7 @@ DEBUG = False
 DEBUG1 = False
 USE_TEST_FILES = False
 CAPTURE_IMAGES = False
-
+'''
 # constructor for Parameter class that holds camera and AprilTag parameters (resolution, fps... )
 # camera parameters are stored externally in a JSON file
 class Parameters:
@@ -31,43 +31,67 @@ class Parameters:
 
     def get_apriltag_para(self):
         return self.parameters['apriltag_detection']
+'''
 
 
 if __name__ == '__main__':
+    '''
     para = Parameters()
     camera_para = para.get_camera_param()
     post_process_para = para.get_post_process()
     apriltag_para = para.get_apriltag_para()
+    '''
 
     cam = cv2.VideoCapture(0)
 
-    cam.set(cv2.CAP_PROP_FRAME_WIDTH, camera_para['frame_width'])
-    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, camera_para['frame_height'])
-    cam.set(cv2.CAP_PROP_FPS, camera_para['fps'])
+    frame_width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = int(cam.get(cv2.CAP_PROP_FPS))
+
+    cam.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
+    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
+    cam.set(cv2.CAP_PROP_FPS, fps)
+    
+    '''
     actual_width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
     actual_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
     actual_fps = int(cam.get(cv2.CAP_PROP_FPS))
     assert actual_width == camera_para['frame_width'], "Frame width does not match setting"
     assert actual_height == camera_para['frame_height'], "Frame height does not match setting"
     assert actual_fps == camera_para['fps'], "Video fps does not match setting"
+    '''
+    
     discrete_interval = 1.0 / actual_fps
 
+    tag_family = "   " # add actual tag family here
+    tag_size = 0 # change to actual value of tag size
+    
+    # modify these values after discussion with Ryan
+    fx = 595.7
+    fy = 595.1
+    cx = 948.4 
+    cy = 507.1 
+
     detector = robotpy_apriltag.AprilTagDetector()
-    detector.addFamily(apriltag_para["tag_family"])
+    detector.addFamily(tag_family)
     estimator = robotpy_apriltag.AprilTagPoseEstimator(
         robotpy_apriltag.AprilTagPoseEstimator.Config(
-            apriltag_para["tag_size"],
-            camera_para["fx"],
-            camera_para["fy"],
-            camera_para["cx"],
-            camera_para["cy"]
+            tag_size,
+            fx,
+            fy,
+            cx,
+            cy
         )
     )
 
     # Recommended by PhotonVision. Not sure if it is hardware related.
+    '''
     DETECTION_MARGIN_THRESHOLD = apriltag_para['detection_margin_threshold']  
     DETECTION_ITERATIONS = apriltag_para['detection_iterations']
-
+    '''
+    DETECTION_MARGIN_THRESHOLD = 0 # set this value, just placeholder rn
+    DETECTION_ITERATIONS = 0 # set this value, just placeholder rn
+    
     cornersBuf = tuple([0.0] * 8)
 
     img_num = 1
