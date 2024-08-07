@@ -52,14 +52,12 @@ if __name__ == '__main__':
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
     cam.set(cv2.CAP_PROP_FPS, fps)
     
-    '''
     actual_width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
     actual_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
     actual_fps = int(cam.get(cv2.CAP_PROP_FPS))
     assert actual_width == camera_para['frame_width'], "Frame width does not match setting"
     assert actual_height == camera_para['frame_height'], "Frame height does not match setting"
     assert actual_fps == camera_para['fps'], "Video fps does not match setting"
-    '''
     
     discrete_interval = 1.0 / actual_fps
 
