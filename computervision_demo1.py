@@ -139,15 +139,13 @@ if __name__ == '__main__':
 
                     #based off our camera, we can only reduce possible poses of aprilTag to two
                     # however, with human intuition we can get down to one pose [TODO below]
-                    pose1 = est.pose1
-                    pose2 = est.pose2
 
                     # TODO: Check if there could be a second pose estimation.
                     # For now, use pose with lowest objest space error:
                     if est.error1 < est.error2:
-                        rightPose = pose1
+                        rightPose = est.pose1
                     else:
-                        rightPose = pose2
+                        rightPose = est.pose2
 
                     print("Tag ID: %s, Tag Pose: X: %3d, Y: %3d, Angle: %3d" % (tag_id, rightPose.X, rightPose.Y, rightPose.rotation.toRotation2d.X))
 
