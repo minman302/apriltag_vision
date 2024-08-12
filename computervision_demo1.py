@@ -21,7 +21,7 @@ CAPTURE_IMAGES = False
 robotPose = wpimath.geometry.Pose2d();
 
 # aprilTag positions: NWU coordinate system in the bottom left
-aprilTagList = []
+aprilTagList = [wpimath.geometry.Pose2d()]
 for i in range(1, 17):
     #Create a temporary aprilTag object to modify below
     tempTag = wpimath.geometry.Pose2d();
@@ -140,20 +140,20 @@ if __name__ == '__main__':
                     #based off our camera, we can only reduce possible poses of aprilTag to two
                     # however, with human intuition we can get down to one pose [TODO below]
 
-                    # TODO: Check if there could be a second pose estimation.
+                    # TODO: implement algorithm to get right pose estimate
                     # For now, use pose with lowest objest space error:
                     if est.error1 < est.error2:
                         rightPose = est.pose1
                     else:
                         rightPose = est.pose2
 
-                    print("Tag ID: %s, Tag Pose: X: %3d, Y: %3d, Angle: %3d" % (tag_id, rightPose.X, rightPose.Y, rightPose.rotation.toRotation2d.X))
+                    
+                    rightPose2D = wpimath.geometry.Pose2d(rightPose.X(), rightPose.Y(), rightPose.rotation().angle)
 
-            
+                    print("Tag ID: %sm, Tag Pose: X: %3dm, Y: %3dm, Angle: %3d*" % (tag_id, rightPose2D.X, rightPose2D.Y, rightPose2D.rotation().degrees()))
 
                     # robot pose estimation
-                    
-
+                    robotPose = aprilTagList[tag_id] - rightPose2D
                 start_time = time.time()
                 processing_time = start_time - prev_time
                 prev_time = start_time
