@@ -4,6 +4,7 @@ import time
 import os
 import json
 import numpy as np
+import math
 
 import cv2
 import robotpy_apriltag
@@ -17,7 +18,7 @@ USE_TEST_FILES = False
 CAPTURE_IMAGES = False
 
 
-#pose object that holds our robot's position
+#global pose object that holds our robot's position
 robotPose = wpimath.geometry.Pose2d();
 
 # aprilTag positions: NWU coordinate system in the bottom left
@@ -128,12 +129,14 @@ if __name__ == '__main__':
 
             # look for tags
             tag_info = detector.detect(grayimg)
-            if not tag_info:
 
+            if tag_info:
+                
                 # filter out aprilTags below decision margin to delete "bad" tags
                 filter_tags = [tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
 
                 for tag in tag_info:
+
                     tag_id = tag.getId()
                     est = estimator.estimateOrthogonalIteration(tag, DETECTION_ITERATIONS)
 
@@ -147,22 +150,29 @@ if __name__ == '__main__':
                     else:
                         rightPose = est.pose2
 
+                    dist = rightPose.Z()
+                    angle = rightPose.rotation().Z()
+
+                    xDist = rightPose.Z() * math.cos(angle)
+                    yDist = rightPose.Z() * math.sin(angle)
+
+                    # Translation2d object repesenting the X and Y distance from the aprilTag to the Robot
+                    tagToRobotTransform = wpimath.geometry.Transform2d(xDist, yDist, angle)
                     
-                    rightPose2D = wpimath.geometry.Pose2d(rightPose.X(), rightPose.Y(), rightPose.rotation().angle)
+                    robotPose = aprilTagList[tag_id].transformBy(tagToRobotTransform)
 
-                    print("Tag ID: %sm, Tag Pose: X: %3dm, Y: %3dm, Angle: %3d*" % (tag_id, rightPose2D.X, rightPose2D.Y, rightPose2D.rotation().degrees()))
+                    print("Tag ID: %s, Tag Distance: %3.2f, Angle: %3.2f*, Robot Pose: X: %3.2fm, Y: %3.2fm, Angle: %3.2f*" % 
+                          (tag_id, dist, angle * 180 / math.pi, robotPose.X(), robotPose.Y(), robotPose.rotation().degrees()))
 
-                    # robot pose estimation
-                    robotPose = aprilTagList[tag_id] - rightPose2D
                 start_time = time.time()
                 processing_time = start_time - prev_time
                 prev_time = start_time
 
                 fps = 1 / processing_time
-                print(f"Image processing rate in {processing_time}s, or {fps} fps")
-                cv2.putText(output_img, str(round(fps, 1)), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
+                #print(f"Image processing rate in {processing_time}s, or {fps} fps")
+                # cv2.putText(output_img, str(round(fps, 1)), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
 
-                # #for every 10th image,
+                #for every 10th image,
                 # if img_num % 10 == 0:
                 #     if DEBUG:
                 #         cv2.imwrite("processed" + str(img_num) + ".png", input_img)
