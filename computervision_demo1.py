@@ -18,31 +18,35 @@ USE_TEST_FILES = False
 CAPTURE_IMAGES = False
 
 
+
 #global pose object that holds our robot's position
 robotPose = wpimath.geometry.Pose2d();
 
 # aprilTag positions: NWU coordinate system in the bottom left
 aprilTagList = [wpimath.geometry.Pose2d()]
+
 for i in range(1, 17):
-    #Create a temporary aprilTag object to modify below
-    tempTag = wpimath.geometry.Pose2d();
-
-    #Modify each aprilTag object based on which wall it is on
+    # create a translation and rotation for each object depending on which wall its on
     if i < 5:
-        tempTag.rotateBy(wpimath.geometry.Rotation2d(np.pi * 3.0 / 4.0))
-        tempTag.transformBy(wpimath.geometry.Transform2d(wpimath.geometry.Translation2d(i, 0), wpimath.geometry.Rotation2d()))
+        rotation = wpimath.geometry.Rotation2d(math.pi * 3.0 / 2.0)
+        translation = wpimath.geometry.Translation2d(i, 0)
     elif i < 9:
-        tempTag.rotateBy(wpimath.geometry.Rotation2d(np.pi / 2.0))
-        tempTag.transformBy(wpimath.geometry.Transform2d(wpimath.geometry.Translation2d(5, 4 - i), wpimath.geometry.Rotation2d()))
-    elif i < 12:
-        tempTag.rotateBy(wpimath.geometry.Rotation2d(np.pi / 4.0))
-        tempTag.transformBy(wpimath.geometry.Transform2d(wpimath.geometry.Translation2d(13 - i, 5), wpimath.geometry.Rotation2d()))
+        rotation = wpimath.geometry.Rotation2d(math.pi)
+        translation = wpimath.geometry.Translation2d(5, 4 - i)
+    elif i < 13:
+        rotation = wpimath.geometry.Rotation2d(math.pi / 2.0)
+        translation = wpimath.geometry.Translation2d(13 - i, -5)
     else:
-        tempTag.rotateBy(wpimath.geometry.Rotation2d())
-        tempTag.transformBy(wpimath.geometry.Transform2d(wpimath.geometry.Translation2d(0, 17 -i), wpimath.geometry.Rotation2d()))
+        rotation = wpimath.geometry.Rotation2d()
+        translation = wpimath.geometry.Translation2d(0, -17 + i)
+    
+    myTag = wpimath.geometry.Pose2d(translation, rotation)
 
-    #append the modified aprilTag to the list. The list index matches the aprilTag ID number
-    aprilTagList.append(tempTag)
+    #append the aprilTag pose to the list. The list index matches the aprilTag ID number
+    aprilTagList.append(myTag)
+
+aprilTagList.pop(0)
+
 
 
 if __name__ == '__main__':
@@ -135,6 +139,12 @@ if __name__ == '__main__':
                 # filter out aprilTags below decision margin to delete "bad" tags
                 filter_tags = [tag for tag in tag_info if tag.getDecisionMargin() > DETECTION_MARGIN_THRESHOLD]
 
+
+                # lists to find averages from all found aprilTags
+                robotAngleList = []
+                robotXList = []
+                robotYList = []
+
                 for tag in tag_info:
 
                     tag_id = tag.getId()
@@ -150,19 +160,54 @@ if __name__ == '__main__':
                     else:
                         rightPose = est.pose2
 
-                    dist = rightPose.Z()
-                    angle = rightPose.rotation().Z()
-
-                    xDist = rightPose.Z() * math.cos(angle)
-                    yDist = rightPose.Z() * math.sin(angle)
-
-                    # Translation2d object repesenting the X and Y distance from the aprilTag to the Robot
-                    tagToRobotTransform = wpimath.geometry.Transform2d(xDist, yDist, angle)
+                    currentTag = aprilTagList[tag_id]
                     
-                    robotPose = aprilTagList[tag_id].transformBy(tagToRobotTransform)
+                    perpendicularDist = rightPose.Z()
+                    parallelDist = rightPose.X()
+                    
+                    tagAngle = currentTag.rotation().radians()
 
-                    print("Tag ID: %s, Tag Distance: %3.2f, Angle: %3.2f*, Robot Pose: X: %3.2fm, Y: %3.2fm, Angle: %3.2f*" % 
-                          (tag_id, dist, angle * 180 / math.pi, robotPose.X(), robotPose.Y(), robotPose.rotation().degrees()))
+                    # robot angle in field coordinates
+                    robotAngle = rightPose.rotation().Y() - tagAngle
+
+                    # field orientation x and y coordinates from camera
+                    perpendicularXComponent = perpendicularDist * math.cos(tagAngle)
+                    perpendicularYComponent = perpendicularDist * math.sin(tagAngle)
+                    
+                    #field orientation x and y coordinates from camera
+                    parallelXComponent = parallelDist * math.sin(tagAngle)
+                    parallelYComponent = parallelDist * math.cos(tagAngle)
+
+                    robotX = currentTag.X() + perpendicularXComponent + parallelXComponent
+                    robotY = currentTag.Y() + perpendicularYComponent + parallelYComponent
+
+
+                    robotXList.append(robotX)
+                    robotYList.append(robotY)
+                    robotAngleList.append(robotAngle)
+
+                
+                xAvg = 0
+                yAvg = 0
+                angleAvg = 0
+
+                for x in range(len(robotXList)):
+                    xAvg += robotXList[x]
+                xAvg = xAvg / (x + 1)
+
+                for y in range(len(robotYList)):
+                    yAvg += robotYList[y]
+                yAvg = yAvg / (y + 1)
+
+                for angle in range(len(robotAngleList)):
+                    angleAvg += robotAngleList[angle]
+                angleAvg = angleAvg / (angle + 1)
+
+                print("Robot Pose X:%3.2fm, Y:%3.2fm, Angle:%3.2f*" %(xAvg, yAvg, angleAvg * 180.0 / math.pi))
+
+
+
+
 
                 start_time = time.time()
                 processing_time = start_time - prev_time
